@@ -1,0 +1,72 @@
+name: React native get ideas
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ANDROID-FIREBASE:
+    runs-on: ubuntu-latest
+    name: Build android react native app
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+      
+      - name: Use NodeJS v16
+        uses: actions/setup-node@v4
+        with:
+          node-version: '16'
+      
+      #------ Using npm instead of yarn below and Cache node modules ------
+      - name: Cache Node.js modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.OS }}-node- 
+            ${{ runner.OS }}- 
+  
+      - name: Install NPM dependencies
+        run: npm install --legacy-peer-deps
+      
+      #------------Cache gradle wrapper and dependencies below ----------------
+      - name: Cache Gradle Wrapper
+        uses: actions/cache@v2
+        with:
+          path: ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-wrapper-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties') }}
+
+      - name: Cache Gradle Dependencies
+        uses: actions/cache@v1
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-caches-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-caches-
+      
+      #------ Prepare fastlane scripts from here ---------------
+      - name: Setup Ruby 
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.0' # Not needed with a .ruby-version file
+
+      - name: Install bundler part 1
+        run: |
+          cd android
+          gem install bundler
+      
+      - name: Install bundle part 2
+        run: |
+          cd android
+          bundle update --bundler
+          bundle config path vendor/bundle
+          bundle install --jobs 4 --retry 3
+
+      - name: Distribute app with 🔥 App Distribution 🚀
+        env:
+          FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.CREDENTIAL_FILE_CONTENT }} 
+        run: |
+          cd android
+          bundle exec fastlane firebase_deploy          
+       
