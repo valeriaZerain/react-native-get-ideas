@@ -1,0 +1,58 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+default_platform(:android)
+
+platform :android do
+  desc "Runs all the tests"
+  lane :test do
+    gradle(task: "test")
+  end
+
+  desc "Submit a new Beta Build to Crashlytics Beta"
+  lane :beta do
+    gradle(task: "clean assembleRelease")
+    crashlytics
+  
+    # sh "your_script.sh"
+    # You can also use other beta testing services here
+  end
+
+  desc "Deploy a new version to the Google Play"
+  lane :deploy do
+    gradle(task: "clean assembleRelease")
+    upload_to_play_store
+  end
+
+  desc "Deploy android app to firebase"
+  lane :firebase_deploy do
+    #Clean and build the App
+    gradle(task: 'clean')
+    gradle(task: 'assembleDebug')
+    #gradle(task: 'assembleRelease')
+
+    #Distribute the app  to firebase
+    echo(message: "Deploying.....")
+    firebase_app_distribution(
+      #app: "1:609984977515:android:15a4033bd2c91e7825ef2e", # Replace with your Firebase app ID
+      #service_credentials_file: "service-account.json",
+      service_credentials_json_data: ENV['GOOGLE_APPLICATION_CREDENTIALS'],
+      app: ENV['FIREBASE_APP_ID'],
+      
+      groups: "testers", # Firebase testers group
+      apk_path: "./app/build/outputs/apk/debug/app-debug.apk"
+    )
+  end
+end
