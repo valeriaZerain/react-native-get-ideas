@@ -68,5 +68,6 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.CREDENTIAL_FILE_CONTENT }} 
         run: |
           cd android
+          chmod +x ./gradlew
           bundle exec fastlane firebase_deploy          
        
